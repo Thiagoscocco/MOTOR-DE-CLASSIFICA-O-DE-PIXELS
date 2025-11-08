@@ -1,0 +1,28 @@
+classificador_dosseis/
+│
+├── main.py                      # Arquivo principal (executa o app Tkinter)
+│
+├── ui/                          # Interface gráfica (Tkinter)
+│   ├── __init__.py
+│   ├── app_window.py            # Janela principal (Tk, Canvas, Sliders)
+│   ├── controls_frame.py        # Botões, sliders e layout lateral
+│   └── canvas_view.py           # Componente que exibe imagem e overlay
+│
+├── processing/                  # Núcleo de processamento de imagem
+│   ├── __init__.py
+│   ├── indices.py               # Cálculo dos índices (ExG, ExGR, NDI, etc.)
+│   ├── segmentation.py          # Funções que geram máscaras a partir dos índices
+│   ├── postprocessing.py        # Funções de limpeza (morfologia, superpixel)
+│   └── realtime_adjust.py       # Combina sliders com reclassificação em tempo real
+│
+├── utils/                       # Funções auxiliares
+│   ├── __init__.py
+│   ├── file_utils.py            # Upload/salvar imagens
+│   ├── color_utils.py           # Conversões RGB↔Lab↔YCrCb
+│   └── metrics.py               # Cálculo das porcentagens planta/palha/solo
+│
+├── assets/                      # Pasta opcional para ícones e imagens de teste
+│   ├── example_1.jpg
+│   └── icon.png
+│
+└── requirements.txt             # Dependências do projeto
