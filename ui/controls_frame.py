@@ -1,4 +1,5 @@
 import tkinter as tk
+import numpy as np
 from tkinter import filedialog
 import cv2
 from processing.indices import compute_all_indices
@@ -41,6 +42,15 @@ class ControlsFrame(tk.Frame):
         self.metrics_label = tk.Label(self, text="Percentuais: -", justify="left")
         self.metrics_label.pack(pady=10)
 
+        #Alterção do modo de visualização:
+        tk.Label(self, text="👁️ Modo de Visualização").pack(pady=(5, 0))
+        from tkinter import ttk
+        self.view_mode = tk.StringVar(value="Overlay")
+        self.combo_view = ttk.Combobox(self, textvariable=self.view_mode, state="readonly",
+                                       values=["Overlay", "Original", "Mapa"], width=15)
+        self.combo_view.pack(pady=3)
+        self.combo_view.bind("<<ComboboxSelected>>", self.change_view_mode)
+
     def upload_image(self):
         """Abre janela de seleção e carrega imagem."""
         file_path = filedialog.askopenfilename(filetypes=[("Imagens", "*.jpg *.png *.jpeg")])
@@ -52,7 +62,12 @@ class ControlsFrame(tk.Frame):
         self.img_original = img
         self.indices = None
         self.canvas_view.display_image(img)
-        self.metrics_label.config(text="Percentuais: -")
+        self.metrics_label.config(text="Percentuais: ")
+
+        self.slider_planta.set(0.5)   # Sensibilidade da Planta
+        self.slider_palha.set(0.5)    # Bias para Palha
+        self.slider_limpeza.set(1)    # Limpeza
+        self.seg_map = None
 
     def generate_indices(self):
         """Calcula índices da imagem carregada."""
@@ -84,6 +99,8 @@ class ControlsFrame(tk.Frame):
         overlay = create_overlay(self.img_original, seg_map)
         self.canvas_view.update_overlay(overlay)
         self.update_metrics(metrics)
+        self.change_view_mode()
+
 
     def update_metrics(self, metrics):
         """Atualiza o texto dos percentuais."""
@@ -100,5 +117,46 @@ class ControlsFrame(tk.Frame):
                                                  filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg")])
         if not file_path:
             return
-        overlay = create_overlay(self.img_original, self.seg_map)
-        cv2.imwrite(file_path, overlay)
+
+        mode = self.view_mode.get()
+        if mode == "Original":
+            img_to_save = self.img_original
+        elif mode == "Mapa":
+             img_to_save = self.create_color_map(self.seg_map)
+        else:  # Overlay
+            from processing.realtime_adjust import create_overlay
+            img_to_save = create_overlay(self.img_original, self.seg_map)
+
+        cv2.imwrite(file_path, img_to_save)
+
+
+    def change_view_mode(self, event=None):
+        """Atualiza a imagem exibida conforme o modo selecionado."""
+        if self.img_original is None or self.seg_map is None:
+            return
+
+        mode = self.view_mode.get()
+        if mode == "Original":
+            self.canvas_view.display_image(self.img_original)
+        elif mode == "Overlay":
+            from processing.realtime_adjust import create_overlay
+            overlay = create_overlay(self.img_original, self.seg_map)
+            self.canvas_view.update_overlay(overlay)
+        elif mode == "Mapa":
+            # Cria imagem somente com as cores das classes
+            mapa = self.create_color_map(self.seg_map)
+            self.canvas_view.update_overlay(mapa)
+
+    def create_color_map(self, seg_map):
+        """Gera o mapa de classes colorido (sem imagem original)."""
+        color_map = {
+            0: (42, 42, 165),   # marrom (solo)
+            1: (0, 255, 255),   # amarelo (palha)
+            2: (0, 200, 0)      # verde (planta)
+        }
+        h, w = seg_map.shape
+        mapa = np.zeros((h, w, 3), np.uint8)
+        for cls, color in color_map.items():
+            mapa[seg_map == cls] = color
+        return mapa
+

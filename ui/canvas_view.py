@@ -27,3 +27,8 @@ class CanvasView(tk.Label):
     def update_overlay(self, overlay_bgr):
         """Atualiza o canvas com o overlay (imagem processada)."""
         self.display_image(overlay_bgr)
+
+    def display_array(self, img_bgr):
+        """Alias para manter semântica quando vierem imagens geradas (overlay/mapa)."""
+        self.display_image(img_bgr)
+
