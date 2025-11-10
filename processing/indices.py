@@ -22,7 +22,7 @@ def calculate_exgr(img):
 def calculate_cive(img):
     b, g, r = cv2.split(img.astype(np.float32))
     cive = 0.441 * r - 0.811 * g + 0.385 * b + 18.787
-    return normalize(-cive)  # negativo pois vegetação tem cive menor
+    return normalize(-cive)
 
 def calculate_ndi(img):
     b, g, r = cv2.split(img.astype(np.float32))
