@@ -80,10 +80,10 @@ def create_overlay(img, seg_map, alpha=0.4):
     return np.clip(overlay, 0, 255).astype(np.uint8)
 
 def generate_class_map(seg_map):
-    """
-    Gera o mapa de classes colorido (sem imagem original).
-    Mesmo esquema de cores do overlay.
-    """
+    
+
+#Atenção com os indices aqui cabeção
+
     color_map = {
         0: (42, 42, 165),   # marrom (solo)
         1: (0, 255, 255),   # amarelo (palha)

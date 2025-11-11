@@ -1,9 +1,11 @@
 import tkinter as tk
-import numpy as np
 from tkinter import filedialog
+from tkinter import ttk
 import cv2
+import numpy as np
 from processing.indices import compute_all_indices
 from processing.realtime_adjust import adjust_segmentation, create_overlay
+
 
 class ControlsFrame(tk.Frame):
     """
@@ -18,33 +20,36 @@ class ControlsFrame(tk.Frame):
         self.seg_map = None
 
         # --- Botões principais ---
-        tk.Button(self, text="📂 Upload Imagem", command=self.upload_image, width=20).pack(pady=5)
-        tk.Button(self, text="⚙️ Processar Imagem", command=self.generate_indices, width=20).pack(pady=5)
-        tk.Button(self, text="💾 Salvar Resultado", command=self.save_result, width=20).pack(pady=5)
+                # --- Botões principais ---
+        ttk.Button(self, text="📂 Upload Imagem", command=self.upload_image, width=20).pack(pady=5)
+        ttk.Button(self, text="⚙️ Gerar Índices", command=self.generate_indices, width=20).pack(pady=5)
+        ttk.Button(self, text="💾 Salvar Resultado", command=self.save_result, width=20).pack(pady=5)
+
 
         # --- Sliders ---
-        tk.Label(self, text="🌿 Sensibilidade da Planta").pack(pady=(15,0))
-        self.slider_planta = tk.Scale(self, from_=0, to=1, resolution=0.01, orient="horizontal", command=self.update_realtime)
-        self.slider_planta.set(0.5)
-        self.slider_planta.pack()
+        ttk.Label(self, text="Sensibilidade da Planta").pack(pady=(15, 0))
+        self.slider_planta = ttk.Scale(self, from_=0, to=1, value=0.5, orient="horizontal", command=lambda v: self.update_realtime())
+        self.slider_planta.pack(fill="x")
 
-        tk.Label(self, text="🌾 Bias para Palha").pack(pady=(10,0))
-        self.slider_palha = tk.Scale(self, from_=0, to=1, resolution=0.01, orient="horizontal", command=self.update_realtime)
-        self.slider_palha.set(0.5)
-        self.slider_palha.pack()
 
-        tk.Label(self, text="🧹 Limpeza").pack(pady=(10,0))
-        self.slider_limpeza = tk.Scale(self, from_=1, to=3, resolution=1, orient="horizontal", command=self.update_realtime)
-        self.slider_limpeza.set(1)
-        self.slider_limpeza.pack()
+        ttk.Label(self, text="Sensibilidade da Palha").pack(pady=(10, 0))
+        self.slider_palha = ttk.Scale(self, from_=0, to=1, value=0.5, orient="horizontal", command=lambda v: self.update_realtime())
+        self.slider_palha.pack(fill="x")
 
-        # --- Texto para métricas ---
-        self.metrics_label = tk.Label(self, text="Percentuais: -", justify="left")
+
+
+        ttk.Label(self, text="Limpeza da Imagem").pack(pady=(10, 0))
+        self.slider_limpeza = ttk.Scale(self, from_=1, to=3, value=1, orient="horizontal", command=lambda v: self.update_realtime())
+        self.slider_limpeza.pack(fill="x")
+
+
+        #Texto para métricas
+        self.metrics_label = ttk.Label(self, text="Percentuais: ", justify="left")
         self.metrics_label.pack(pady=10)
 
+
         #Alterção do modo de visualização:
-        tk.Label(self, text="👁️ Modo de Visualização").pack(pady=(5, 0))
-        from tkinter import ttk
+        tk.Label(self, text="Modo de Visualização").pack(pady=(5, 0))
         self.view_mode = tk.StringVar(value="Overlay")
         self.combo_view = ttk.Combobox(self, textvariable=self.view_mode, state="readonly",
                                        values=["Overlay", "Original", "Mapa"], width=15)
@@ -65,7 +70,7 @@ class ControlsFrame(tk.Frame):
         self.metrics_label.config(text="Percentuais: ")
 
         self.slider_planta.set(0.5)   # Sensibilidade da Planta
-        self.slider_palha.set(0.5)    # Bias para Palha
+        self.slider_palha.set(0.5)    # Sensibilidade da Palha
         self.slider_limpeza.set(1)    # Limpeza
         self.seg_map = None
 
@@ -104,9 +109,9 @@ class ControlsFrame(tk.Frame):
 
     def update_metrics(self, metrics):
         """Atualiza o texto dos percentuais."""
-        text = (f"🌱 Planta: {metrics['planta_%']}%\n"
-                f"🌾 Palha: {metrics['palha_%']}%\n"
-                f"🪵 Solo: {metrics['solo_%']}%")
+        text = (f"Planta:  {metrics['planta_%']}%\n"
+                f"Palha:  {metrics['palha_%']}%\n"
+                f"Solo:  {metrics['solo_%']}%")
         self.metrics_label.config(text=text)
 
     def save_result(self):
