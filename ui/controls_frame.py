@@ -34,7 +34,7 @@ class ControlsFrame(tk.Frame):
 
 
         ttk.Label(self, text="Sensibilidade da Palha").pack(pady=(10, 0))
-        self.slider_palha = ttk.Scale(self, from_=0, to=1, value=0.5, orient="horizontal", command=lambda v: self.update_realtime())
+        self.slider_palha = ttk.Scale(self, from_=0, to=1.5, value=0.75, orient="horizontal", command=lambda v: self.update_realtime())
         self.slider_palha.pack(fill="x")
 
 
