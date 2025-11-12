@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 from processing.indices import compute_all_indices
 from processing.realtime_adjust import adjust_segmentation, create_overlay
+from utils.metrics import calculate_percentages
 
 
 class ControlsFrame(tk.Frame):
@@ -115,24 +116,67 @@ class ControlsFrame(tk.Frame):
         self.metrics_label.config(text=text)
 
     def save_result(self):
-        """Salva o resultado final (overlay e mapa de classes)."""
+        """Salva o resultado final (overlay ou mapa) acrescentando o rodapé."""
         if self.seg_map is None or self.img_original is None:
             return
-        file_path = filedialog.asksaveasfilename(defaultextension=".png",
-                                                 filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg")])
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg")]
+        )
         if not file_path:
             return
 
         mode = self.view_mode.get()
         if mode == "Original":
-            img_to_save = self.img_original
+            img_to_save = self.img_original.copy()
         elif mode == "Mapa":
-             img_to_save = self.create_color_map(self.seg_map)
-        else:  # Overlay
-            from processing.realtime_adjust import create_overlay
+            img_to_save = self.create_color_map(self.seg_map)
+        else:
             img_to_save = create_overlay(self.img_original, self.seg_map)
 
-        cv2.imwrite(file_path, img_to_save)
+        metrics = calculate_percentages(self.seg_map)
+        final_img = self._compose_footer_image(img_to_save, metrics)
+        cv2.imwrite(file_path, final_img)
+
+    def _compose_footer_image(self, img_to_save, metrics):
+        """
+        Monta rodapé seguindo a estética solicitada sem alterar o processamento dos pixels.
+        """
+        h, w, _ = img_to_save.shape
+        footer_h = max(60, int(h * 0.08))
+        footer = np.full((footer_h, w, 3), 255, dtype=np.uint8)
+        final_img = np.vstack((img_to_save, footer))
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = max(0.6, round(w / 1600.0, 2))
+        thickness = max(1, int(font_scale * 2))
+
+        sections = [
+            ("PLANTA", metrics["planta_%"]),
+            ("PALHA", metrics["palha_%"]),
+            ("SOLO", metrics["solo_%"]),
+        ]
+        section_width = w // len(sections)
+        baseline_y = h + (footer_h + cv2.getTextSize("A", font, font_scale, thickness)[0][1]) // 2
+
+        for idx, (label, value) in enumerate(sections):
+            value_str = f"{value:.2f}".rstrip("0").rstrip(".")
+            text = f"{label}: {value_str} %"
+            text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
+            center_x = int((idx + 0.5) * section_width)
+            text_x = max(10, center_x - text_size[0] // 2)
+            cv2.putText(final_img, text, (text_x, baseline_y), font, font_scale, (0, 0, 0), thickness, cv2.LINE_AA)
+
+        watermark = "Thiagoscocco 2025"
+        wm_scale = max(0.5, round(font_scale * 0.55, 2))
+        wm_thickness = max(1, int(wm_scale * 2))
+        wm_size = cv2.getTextSize(watermark, font, wm_scale, wm_thickness)[0]
+        wm_x = max(10, w - wm_size[0] - int(w * 0.02))
+        wm_y = h + footer_h - int(footer_h * 0.2)
+        cv2.putText(final_img, watermark, (wm_x, wm_y), font, wm_scale, (90, 90, 90), wm_thickness, cv2.LINE_AA)
+
+        return final_img
 
 
     def change_view_mode(self, event=None):
